@@ -3,7 +3,7 @@ const realTimeApi = require('./realTimeApi');
 
 function route(app) {
     app.use('/api', api);
-    // app.use('/realtime/api');
+    app.use('/realtime/api', realTimeApi);
 
 }
 

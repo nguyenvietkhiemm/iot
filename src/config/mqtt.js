@@ -1,23 +1,20 @@
-
 const mqtt = require('mqtt');
 
 const mqttBrokerUrl = 'mqtt://localhost:1111';
 const mqttUser = 'khiem';
 const mqttPassword = '123';
 
-// Tạo client MQTT và kết nối
 const mqttClient = mqtt.connect(mqttBrokerUrl, {
   username: mqttUser,
   password: mqttPassword
 });
 
-// Kết nối MQTT
 mqttClient.on('connect', () => {
   console.log('Connected to MQTT Broker');
   // Đăng ký chủ đề MQTT
   mqttClient.subscribe('data/sensor', (err) => {
     if (err) {
-      console.error('Failed to subscribe to topic');
+      console.error('Failed to subscribe to topic: data/sensor');
     } else {
       console.log('Subscribed to topic: data/sensor');
     }
@@ -25,11 +22,15 @@ mqttClient.on('connect', () => {
 
   mqttClient.subscribe('data/led', (err) => {
     if (err) {
-      console.error('Failed to subscribe to topic');
+      console.error('Failed to subscribe to topic: data/led');
     } else {
       console.log('Subscribed to topic: data/led');
     }
   });
+});
+
+mqttClient.on('error', (err) => {
+  console.error('MQTT Client Error:', err);
 });
 
 module.exports = mqttClient;

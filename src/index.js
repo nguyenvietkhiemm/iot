@@ -1,11 +1,9 @@
-const http = require('http');
 const express = require('express');
 const session = require('express-session');
 const morgan = require('morgan');
 const path = require('path');
-const mqtt = require('./config/mqtt'); // create mqttClient connect to mqttBroker
+const mqttClient = require('./config/mqtt'); // create mqttClient connect to mqttBroker
 const db = require('./config/database'); // create connect to mysql database
-const mqttSocketService = require('./app/services/mqttSocketService');
 
 const route = require('./routes/_route');
 
@@ -13,7 +11,6 @@ const cors = require('cors');
 
 const port = 3000;
 const app = express();
-const server = http.createServer(app); // create http server
 
 // Cấu hình session
 app.use(session({
@@ -31,10 +28,13 @@ app.use(express.json());
 // http logger
 app.use(morgan('combined'));
 
-app.use(cors());
+app.use(cors({
+    origin: '*',  // Địa chỉ frontend của bạn
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],  // Các phương thức được phép
+    allowedHeaders: ['Content-Type', 'Authorization'],  // Header được phép
+    credentials: true // Cho phép gửi cookie nếu cần
+  }));
 
 route(app);
- // connect to mysql database
-mqttSocketService(mqtt, server);
 
-server.listen(port, () => console.log(`App listening on port ${port}`));
+app.listen(port, () => console.log(`App listening on port ${port}`));
