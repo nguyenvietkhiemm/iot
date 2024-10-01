@@ -1,23 +1,28 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User'); 
 
-const checkToken = (socket, next) => {
-    const token = socket.handshake.headers['token']; // Lấy token từ headers
+const checkToken = (req, res, next) => {
+    const token = req.body.token; // Lấy token từ body
+    delete req.body.token; // Xóa token trong body
 
-    // Nếu không có token, cho phép tiếp tục kết nối mà không lưu thông tin người dùng
     if (!token) {
-        return next(); // Không có token, vẫn cho phép kết nối
+        return res.status(403).json({ message: 'No auth' });
     }
 
-    // Nếu có token, kiểm tra tính hợp lệ của token
-    jwt.verify(token, 'alittledaisy_token', async (err, decoded) => {
+    jwt.verify(token, "alittledaisy_token", (err, decoded) => {
         if (err) {
-            return next(); // Nếu token không hợp lệ, vẫn cho phép kết nối (không chặn kết nối)
+            return res.status(401).json({ message: 'Failed to authenticate token' });
         }
 
-        // Lưu thông tin người dùng vào socket.user nếu token hợp lệ
-        socket.user = await User.findByPk(decoded.id); // Tìm người dùng theo ID trong token
-        next(); // Cho phép tiếp tục kết nối
+        // Attach user data to request
+        User.findByPk(decoded.id).then((user) => {
+            req.userId = user.id;
+        }).catch((err) => {
+            console.error(err);
+            res.status(500).json({ message: 'Internal server error' });
+        });
+        
+        next();
     });
 };
 
