@@ -25,7 +25,7 @@ class RealTimeApiController {
         const requestId = uuidv4(); // Tạo ID duy nhất cho mỗi request
     
         Object.keys(controlData).forEach((key) => {
-            if (controlData[key] !== currentLedData[key]) {
+            if (controlData[key] !== currentLedData[key] && currentLedData[key] !== undefined) {
                 _controlData[key] = controlData[key];
             }
         });
