@@ -4,7 +4,7 @@ const Sensor = require('../models/Sensor');  // Model Sensor
 const Data_Sensor = require('../models/Data_Sensor'); // Model Data Sensor
 const Data_Device = require('../models/Data_Device'); // Model Data Device
 const jwt = require('jsonwebtoken');
-const {Sequelize, Op} = require('sequelize'); // Model
+const { Sequelize, Op } = require('sequelize'); // Model
 
 class ApiController {
     // [GET] /api/data/users
@@ -42,15 +42,34 @@ class ApiController {
     // [GET] /api/data/data_sensors
     async data_sensors(req, res, next) {
         try {
-            const { page = 1, pageSize = 100 } = req.query; // Mặc định là trang 1 và kích thước 25
-            const offset = (page - 1) * pageSize; // Tính toán offset
-    
+            const { page = 1, pageSize = 100, searchText = '', startDate, endDate } = req.query; // Mặc định là trang 1 và pageSize 100
+            const offset = (page - 1) * pageSize;
+            const whereClause = {};
+
+            // Nếu có searchText, tìm kiếm trong các trường temperature, humidity, light
+            if (searchText) {
+                whereClause[Op.or] = [
+                    { temperature: { [Op.like]: `%${searchText}%` } },
+                    { humidity: { [Op.like]: `%${searchText}%` } },
+                    { light: { [Op.like]: `%${searchText}%` } },
+                    { time: { [Op.like]: `%${searchText}%` } },
+                ];
+            }
+
+            // Nếu có startDate và endDate, thêm điều kiện lọc theo thời gian
+            if (startDate && endDate) {
+                whereClause.time = {
+                    [Op.between]: [new Date(startDate), new Date(endDate)]
+                };
+            }
+
             const { count, rows } = await Data_Sensor.findAndCountAll({
+                where: whereClause,
                 limit: parseInt(pageSize, 10), // Giới hạn số lượng kết quả
                 offset: parseInt(offset, 10), // Bỏ qua số lượng kết quả trước đó
-                order: [['time', 'DESC']],
+                order: [['time', 'DESC']], // Sắp xếp theo time giảm dần
             });
-    
+
             res.json({
                 total: count,
                 items: rows,
@@ -59,7 +78,7 @@ class ApiController {
             next(error);
         }
     }
-    
+
     // [GET] /api/data/data_devices
     async data_devices(req, res, next) {
         try {
@@ -74,7 +93,7 @@ class ApiController {
                     { action: { [Op.like]: `%${searchText}%` } } // Tìm kiếm trong action
                 ];
             }
-    
+
             // Nếu có selectedAction, thêm điều kiện cho action
             if (selectedAction) {
                 whereClause.action = selectedAction;
@@ -85,7 +104,7 @@ class ApiController {
                     [Op.between]: [new Date(startDate), new Date(endDate)]
                 };
             }
-    
+
             const { count, rows } = await Data_Device.findAndCountAll({
                 where: whereClause,
                 limit: parseInt(pageSize, 10), // Giới hạn số lượng kết quả
@@ -123,7 +142,7 @@ class ApiController {
     // [POST] /api/login
     async login(req, res, next) {
         const { username, password } = req.body;
-        
+
         try {
             // Tìm người dùng trong cơ sở dữ liệu
             const user = await User.findOne({ where: { username } });
